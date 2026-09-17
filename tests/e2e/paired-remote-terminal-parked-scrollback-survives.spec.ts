@@ -174,6 +174,45 @@ async function runParkRevealScenario(
   )
   console.log(`[parked-scrollback] park-diagnostics ${JSON.stringify(parkDiagnostics)}`)
 
+  // Why a forced inventory frame: without one this spec passes whether or not the mirrored-layout
+  // rebuild carries the capture, because no frame happens to land in its window. A host frame
+  // rebuilds the tab's layout bufferless; terminalLayoutEqual compares buffers, so the write is
+  // not bailed out and apply-terminal-records assigns it wholesale. That wipes the only
+  // client-side copy. This is the destroying event, so it belongs inside the window under test.
+  const probeTab = await createPairedHostTerminal(
+    clientPage,
+    environmentId,
+    worktreeId,
+    fixtureCommand()
+  )
+  createdTerminals.push(probeTab.terminal)
+  await expect
+    .poll(
+      () =>
+        clientPage.evaluate(
+          (id) => (window.__store?.getState().tabsByWorktree[id] ?? []).map((tab) => tab.id),
+          worktreeId
+        ),
+      {
+        timeout: 60_000,
+        message: 'client never mirrored the probe tab (no inventory frame landed)'
+      }
+    )
+    .toContain(probeTab.webTabId)
+  const afterInventoryFrame = await clientPage.evaluate((webTabId) => {
+    const layout = window.__store?.getState().terminalLayoutsByTabId?.[webTabId]
+    return {
+      leafIds: Object.keys(layout?.buffersByLeafId ?? {}),
+      length: Object.values(layout?.buffersByLeafId ?? {}).join('').length,
+      layoutKnown: layout !== undefined
+    }
+  }, target.webTabId)
+  console.log(`[parked-scrollback] after-inventory-frame ${JSON.stringify(afterInventoryFrame)}`)
+  expect(
+    { survivedInventoryFrame: afterInventoryFrame.length > 0 },
+    'a host inventory frame wiped the park capture before the reveal'
+  ).toEqual({ survivedInventoryFrame: true })
+
   await openPairedClientTab(clientPage, worktreeId, target.webTabId)
   const tokenAfterReveal = await waitForPairedPaneMarker(
     clientPage,
