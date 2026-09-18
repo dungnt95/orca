@@ -31,26 +31,49 @@ describe('CommentMarkdown', () => {
     )
   })
 
-  it('renders inline and block math without parsing code spans', () => {
+  it('renders inline math without a display wrapper', () => {
     const markup = renderToStaticMarkup(
       <CommentMarkdown
         variant="document"
         renderMath
-        content={[
-          String.raw`Inline $x^2$ and $\text{Thành công}$.
-
-$$
-\frac{a}{b}
-$$`,
-          '`$literal$`'
-        ].join('\n\n')}
+        content={String.raw`Inline $x^2$ and $\text{Thành công}$.`}
       />
     )
 
     expect(markup).toContain('class="katex"')
     expect(markup).toContain('Thành công')
+    expect(markup).not.toContain('class="katex-display"')
+    expect(markup).not.toContain('language-math')
+  })
+
+  it('renders block math', () => {
+    const markup = renderToStaticMarkup(
+      <CommentMarkdown
+        variant="document"
+        renderMath
+        content={String.raw`$$
+\frac{a}{b}
+$$`}
+      />
+    )
+
     expect(markup).toContain('class="katex-display"')
-    expect(markup).toContain('>$literal$</code>')
+  })
+
+  it('keeps inline and fenced code dollar signs unchanged', () => {
+    const markup = renderToStaticMarkup(
+      <CommentMarkdown
+        renderMath
+        content={['Inline `$100`.', '```sh\necho $1\n```', '~~~sh\necho $2\n~~~'].join('\n\n')}
+      />
+    )
+
+    expect(markup).toContain('>$100</code>')
+    expect(markup).toContain('echo $1')
+    expect(markup).toContain('echo $2')
+    expect(markup).not.toContain('\\$100')
+    expect(markup).not.toContain('echo \\$1')
+    expect(markup).not.toContain('echo \\$2')
   })
 
   it('keeps currency dollar signs when math rendering is enabled', () => {
@@ -65,6 +88,13 @@ $$`,
     expect(markup).toContain('~$1,550')
     expect(markup).toContain('$15.4/month')
     expect(markup).not.toContain('class="katex"')
+  })
+
+  it('renders inline math that starts with a number', () => {
+    const markup = renderToStaticMarkup(<CommentMarkdown renderMath content="$2 + 2 = 4$" />)
+
+    expect(markup).toContain('class="katex"')
+    expect(markup).not.toContain('language-math')
   })
 
   it('autolinks same-repo GitHub issue references when repo context is provided', () => {
