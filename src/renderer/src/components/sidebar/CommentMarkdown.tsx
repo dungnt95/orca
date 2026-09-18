@@ -2,8 +2,10 @@ import React from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
+import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
+import rehypeKatex from 'rehype-katex'
 import { cn } from '@/lib/utils'
 import {
   compactCommentMarkdownComponents,
@@ -189,6 +191,7 @@ type CommentMarkdownProps = React.ComponentPropsWithoutRef<'div'> & {
   allowFileUriLinks?: boolean
   linkifyFilePaths?: boolean
   expandImages?: boolean
+  renderMath?: boolean
   renderCodeBlock?: DocumentCodeBlockRenderer
 }
 
@@ -207,6 +210,7 @@ const CommentMarkdown = React.memo(
       linkifyFilePaths = false,
       expandImages = false,
       renderCodeBlock,
+      renderMath = false,
       ...rest
     },
     ref
@@ -226,11 +230,21 @@ const CommentMarkdown = React.memo(
         : createCompactCommentMarkdownComponents(onLinkClick, expandImages)
     }, [expandImages, renderCodeBlock, variant, onLinkClick])
     const activeRemarkPlugins = React.useMemo(() => {
-      const plugins = linkifyFilePaths
-        ? [...remarkPlugins, remarkNativeChatFileLinks]
-        : remarkPlugins
-      return githubRepo ? [...plugins, remarkGitHubReferences(githubRepo)] : plugins
-    }, [githubRepo, linkifyFilePaths])
+      const plugins = renderMath ? [...remarkPlugins, remarkMath] : remarkPlugins
+      const linkedPlugins = linkifyFilePaths ? [...plugins, remarkNativeChatFileLinks] : plugins
+      return githubRepo ? [...linkedPlugins, remarkGitHubReferences(githubRepo)] : linkedPlugins
+    }, [githubRepo, linkifyFilePaths, renderMath])
+    const activeRehypePlugins = React.useMemo(
+      () => (renderMath ? [...rehypePlugins, rehypeKatex] : rehypePlugins),
+      [renderMath]
+    )
+    const markdownContent = React.useMemo(
+      () =>
+        renderMath
+          ? content.replace(/\\?\$(?=\d)/g, (match) => (match === '$' ? '\\$' : match))
+          : content,
+      [content, renderMath]
+    )
 
     return (
       <div
@@ -247,13 +261,13 @@ const CommentMarkdown = React.memo(
       >
         <Markdown
           remarkPlugins={activeRemarkPlugins}
-          rehypePlugins={rehypePlugins}
+          rehypePlugins={activeRehypePlugins}
           components={components}
           urlTransform={
             allowFileUriLinks ? commentMarkdownFileUriUrlTransform : commentMarkdownUrlTransform
           }
         >
-          {content}
+          {markdownContent}
         </Markdown>
       </div>
     )

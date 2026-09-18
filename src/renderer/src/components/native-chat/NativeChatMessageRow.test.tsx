@@ -50,6 +50,31 @@ describe('MessageRow control visibility', () => {
     })
   })
 
+  it('renders assistant math while preserving currency dollar signs', () => {
+    render(
+      <MessageRow
+        message={{
+          id: 'message',
+          role: 'assistant',
+          timestamp: 0,
+          source: 'transcript',
+          blocks: [
+            {
+              type: 'text',
+              text: String.raw`Confidence: $P = \text{Success}$. Cost: $148+ → $19.`
+            }
+          ]
+        }}
+        expandSignal={false}
+        onScrollMessageToTop={vi.fn()}
+      />
+    )
+
+    expect(document.querySelector('.katex')).not.toBeNull()
+    expect(document.body.textContent).toContain('Success')
+    expect(document.body.textContent).toContain('Cost: $148+ → $19.')
+  })
+
   it('appends time to the existing agent controls and inherits their reveal', () => {
     renderMessage('assistant')
     const copy = screen.getByRole('button', { name: 'Copy message' })

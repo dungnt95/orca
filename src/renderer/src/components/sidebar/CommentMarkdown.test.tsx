@@ -31,6 +31,42 @@ describe('CommentMarkdown', () => {
     )
   })
 
+  it('renders inline and block math without parsing code spans', () => {
+    const markup = renderToStaticMarkup(
+      <CommentMarkdown
+        variant="document"
+        renderMath
+        content={[
+          String.raw`Inline $x^2$ and $\text{Thành công}$.
+
+$$
+\frac{a}{b}
+$$`,
+          '`$literal$`'
+        ].join('\n\n')}
+      />
+    )
+
+    expect(markup).toContain('class="katex"')
+    expect(markup).toContain('Thành công')
+    expect(markup).toContain('class="katex-display"')
+    expect(markup).toContain('>$literal$</code>')
+  })
+
+  it('keeps currency dollar signs when math rendering is enabled', () => {
+    const markup = renderToStaticMarkup(
+      <CommentMarkdown
+        renderMath
+        content="Monthly cost $148+ → $19; additional savings ~$1,550 and $15.4/month."
+      />
+    )
+
+    expect(markup).toContain('$148+ → $19')
+    expect(markup).toContain('~$1,550')
+    expect(markup).toContain('$15.4/month')
+    expect(markup).not.toContain('class="katex"')
+  })
+
   it('autolinks same-repo GitHub issue references when repo context is provided', () => {
     const markup = renderToStaticMarkup(
       <CommentMarkdown
