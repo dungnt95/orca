@@ -24,31 +24,34 @@ function renderMessage(role: NativeChatMessage['role'], timestamp: number | null
 }
 
 describe('MessageRow control visibility', () => {
-  it('renders and copies a fenced code block through the markdown path', async () => {
-    const writeClipboardText = vi.fn().mockResolvedValue(undefined)
-    Object.assign(window, { api: { ui: { writeClipboardText } } })
+  it.each(['```sh\necho $1\n', '    echo $1\n'])(
+    'preserves shell dollars when rendering and copying code: %s',
+    async (content) => {
+      const writeClipboardText = vi.fn().mockResolvedValue(undefined)
+      Object.assign(window, { api: { ui: { writeClipboardText } } })
 
-    render(
-      <MessageRow
-        message={{
-          id: 'message',
-          role: 'assistant',
-          timestamp: 0,
-          source: 'transcript',
-          blocks: [{ type: 'text', text: '```ts\nconst answer = 42\n```' }]
-        }}
-        expandSignal={false}
-        onScrollMessageToTop={vi.fn()}
-      />
-    )
+      render(
+        <MessageRow
+          message={{
+            id: 'message',
+            role: 'assistant',
+            timestamp: 0,
+            source: 'transcript',
+            blocks: [{ type: 'text', text: content }]
+          }}
+          expandSignal={false}
+          onScrollMessageToTop={vi.fn()}
+        />
+      )
 
-    expect(screen.getByText('ts')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Copy code' }))
+      expect(document.querySelector('pre')?.textContent).toContain('echo $1')
+      fireEvent.click(screen.getByRole('button', { name: 'Copy code' }))
 
-    await waitFor(() => {
-      expect(writeClipboardText).toHaveBeenCalledWith('const answer = 42\n')
-    })
-  })
+      await waitFor(() => {
+        expect(writeClipboardText).toHaveBeenCalledWith('echo $1\n')
+      })
+    }
+  )
 
   it('renders assistant math while preserving currency dollar signs', () => {
     render(

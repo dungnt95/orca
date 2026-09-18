@@ -2,7 +2,7 @@ import React from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import remarkMath from 'remark-math'
+import { remarkChatMath } from './comment-markdown-math'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeKatex from 'rehype-katex'
@@ -65,59 +65,6 @@ const commentMarkdownFileUriUrlTransform: UrlTransform = (value, key, node) => {
 // remark-breaks converts single newlines to <br>, keeping backward compat
 // with existing plain-text comments that rely on newline formatting.
 const remarkPlugins = [remarkGfm, remarkBreaks]
-
-function escapeCurrencyDollarDelimiters(content: string): string {
-  let output = ''
-  let index = 0
-
-  while (index < content.length) {
-    const marker = content[index]
-    const markerLength =
-      marker === '`'
-        ? content.slice(index).match(/^`+/)?.[0].length
-        : marker === '~' && (index === 0 || content[index - 1] === '\n')
-          ? content.slice(index).match(/^~{3,}/)?.[0].length
-          : undefined
-    if (markerLength !== undefined) {
-      const delimiter = marker.repeat(markerLength)
-      const closeIndex = content.indexOf(delimiter, index + markerLength)
-      if (closeIndex !== -1) {
-        output += content.slice(index, closeIndex + markerLength)
-        index = closeIndex + markerLength
-        continue
-      }
-    }
-
-    if (marker !== '$' || content[index - 1] === '\\' || !/[0-9]/.test(content[index + 1] ?? '')) {
-      output += marker
-      index += 1
-      continue
-    }
-
-    let end = index + 1
-    while (/[0-9,.]/.test(content[end] ?? '')) {
-      end += 1
-    }
-    if (content[end] === '+' && !/[0-9]/.test(content[end + 1] ?? '')) {
-      end += 1
-    }
-
-    const closingDollar = content.indexOf('$', end)
-    const delimiterEndsMath =
-      closingDollar !== -1 &&
-      !content.slice(end, closingDollar).includes('\n') &&
-      !/[0-9]/.test(content[closingDollar + 1] ?? '') &&
-      /[+\-=/^_\\]/.test(content.slice(end, closingDollar))
-    const beginsOperator = /^\s+[+\-=^_\\]/.test(content.slice(end))
-    if (!delimiterEndsMath && !beginsOperator) {
-      output += '\\'
-    }
-    output += marker
-    index += 1
-  }
-
-  return output
-}
 
 const GITHUB_REFERENCE_PATTERN = /(?:\b([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+))?#([1-9][0-9]*)\b/g
 
@@ -283,17 +230,13 @@ const CommentMarkdown = React.memo(
         : createCompactCommentMarkdownComponents(onLinkClick, expandImages)
     }, [expandImages, renderCodeBlock, variant, onLinkClick])
     const activeRemarkPlugins = React.useMemo(() => {
-      const plugins = renderMath ? [...remarkPlugins, remarkMath] : remarkPlugins
+      const plugins = renderMath ? [...remarkPlugins, remarkChatMath] : remarkPlugins
       const linkedPlugins = linkifyFilePaths ? [...plugins, remarkNativeChatFileLinks] : plugins
       return githubRepo ? [...linkedPlugins, remarkGitHubReferences(githubRepo)] : linkedPlugins
     }, [githubRepo, linkifyFilePaths, renderMath])
     const activeRehypePlugins = React.useMemo(
       () => (renderMath ? [...rehypePlugins, rehypeKatex] : rehypePlugins),
       [renderMath]
-    )
-    const markdownContent = React.useMemo(
-      () => (renderMath ? escapeCurrencyDollarDelimiters(content) : content),
-      [content, renderMath]
     )
 
     return (
@@ -317,7 +260,7 @@ const CommentMarkdown = React.memo(
             allowFileUriLinks ? commentMarkdownFileUriUrlTransform : commentMarkdownUrlTransform
           }
         >
-          {markdownContent}
+          {content}
         </Markdown>
       </div>
     )

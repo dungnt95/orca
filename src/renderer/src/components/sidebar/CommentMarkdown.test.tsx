@@ -97,6 +97,34 @@ $$`}
     expect(markup).not.toContain('language-math')
   })
 
+  it('keeps operator-containing currency prose literal beside real math', () => {
+    const markup = renderToStaticMarkup(
+      <CommentMarkdown renderMath content="It costs $5 + tax, or $7 total. Math: $2 + 2 = 4$." />
+    )
+    expect(markup).toContain('It costs $5 + tax, or $7 total.')
+    expect(markup).not.toContain('katex-error')
+    expect(markup).toContain('class="katex"')
+    expect(markup).toContain('encoding="application/x-tex">2 + 2 = 4</annotation>')
+  })
+
+  it('preserves parser-recognized unclosed and indented code', () => {
+    for (const content of ['```sh\necho $1\n', '~~~sh\necho $1\n', '    echo $1\n']) {
+      const markup = renderToStaticMarkup(<CommentMarkdown renderMath content={content} />)
+      expect(markup).toContain('echo $1')
+      expect(markup).not.toContain('echo \\$1')
+      expect(markup).not.toContain('katex')
+    }
+  })
+
+  it('renders numeric literals and double-dollar math without operator guessing', () => {
+    const markup = renderToStaticMarkup(
+      <CommentMarkdown renderMath content={'$2$ and $2x$.\n\n$$2 + 2 = 4$$'} />
+    )
+    expect(markup).toContain('encoding="application/x-tex">2</annotation>')
+    expect(markup).toContain('encoding="application/x-tex">2x</annotation>')
+    expect(markup).toContain('encoding="application/x-tex">2 + 2 = 4</annotation>')
+  })
+
   it('autolinks same-repo GitHub issue references when repo context is provided', () => {
     const markup = renderToStaticMarkup(
       <CommentMarkdown
