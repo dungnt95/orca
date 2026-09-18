@@ -8,6 +8,8 @@ type ParkedTerminalCaptureArgs = {
   worktreeId: string
   tabIds: readonly string[]
   repos: readonly RepoConnection[]
+  /** Ordinary parks keep the bytes client-local; force-parks share them. See ShutdownBufferCaptureOptions. */
+  localOnly: boolean
 }
 
 /** Serialize a parked worktree's panes before the park unmounts them.
@@ -20,7 +22,8 @@ type ParkedTerminalCaptureArgs = {
 export function captureParkedTerminalBuffers({
   worktreeId,
   tabIds,
-  repos
+  repos,
+  localOnly
 }: ParkedTerminalCaptureArgs): boolean {
   // Why skip local worktrees: includeLocalBuffers:false serializes nothing for them, so the only
   // effect left is setTabLayout replacing away a stored buffer (e.g. an exited setup pane's output).
@@ -28,7 +31,8 @@ export function captureParkedTerminalBuffers({
     return true
   }
   const { requested, captured } = captureTerminalShutdownBuffersBestEffort(tabIds, {
-    includeLocalBuffers: false
+    includeLocalBuffers: false,
+    localOnly
   })
   return captured === requested
 }

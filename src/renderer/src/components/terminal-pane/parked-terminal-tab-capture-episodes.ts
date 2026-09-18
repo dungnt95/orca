@@ -32,7 +32,8 @@ export function captureNewlyParkedTerminalTabs(
     }
     // Why one tab per call: coverage is reported for the whole batch, and a tab mid-remount must
     // stay unmarked so the next pass retries it instead of parking it uncaptured.
-    if (captureParkedTerminalBuffers({ worktreeId, tabIds: [tabId], repos })) {
+    // Why localOnly: this is the per-tab ordinary park, the every-hide cadence the upload must not pay for.
+    if (captureParkedTerminalBuffers({ worktreeId, tabIds: [tabId], repos, localOnly: true })) {
       capturedTabIds.add(tabId)
     }
   }

@@ -26,25 +26,41 @@ describe('captureParkedTerminalBuffers', () => {
     const captured = captureParkedTerminalBuffers({
       worktreeId: 'repo::/repo/worktree',
       tabIds: ['tab-1'],
-      repos: [LOCAL_REPO]
+      repos: [LOCAL_REPO],
+      localOnly: true
     })
 
     expect(captured).toBe(true)
     expect(capture).not.toHaveBeenCalled()
   })
 
-  it('captures remote worktree tabs without local buffers and reports full coverage', () => {
+  it('routes an ordinary park to the local-only home and reports full coverage', () => {
     const capture = vi.fn()
     shutdownBufferCaptures.set('tab-1', capture)
 
     const captured = captureParkedTerminalBuffers({
       worktreeId: 'repo::/repo/worktree',
       tabIds: ['tab-1'],
-      repos: [SSH_REPO]
+      repos: [SSH_REPO],
+      localOnly: true
     })
 
     expect(captured).toBe(true)
-    expect(capture).toHaveBeenCalledWith({ includeLocalBuffers: false })
+    expect(capture).toHaveBeenCalledWith({ includeLocalBuffers: false, localOnly: true })
+  })
+
+  it('keeps a force-park capture in the shared layout so a second desktop can cold-restore', () => {
+    const capture = vi.fn()
+    shutdownBufferCaptures.set('tab-1', capture)
+
+    captureParkedTerminalBuffers({
+      worktreeId: 'repo::/repo/worktree',
+      tabIds: ['tab-1'],
+      repos: [SSH_REPO],
+      localOnly: false
+    })
+
+    expect(capture).toHaveBeenCalledWith({ includeLocalBuffers: false, localOnly: false })
   })
 
   it('reports an incomplete episode when a tab has no registered capture', () => {
@@ -53,7 +69,8 @@ describe('captureParkedTerminalBuffers', () => {
     const captured = captureParkedTerminalBuffers({
       worktreeId: 'repo::/repo/worktree',
       tabIds: ['tab-1', 'tab-mid-remount'],
-      repos: [SSH_REPO]
+      repos: [SSH_REPO],
+      localOnly: true
     })
 
     expect(captured).toBe(false)

@@ -88,6 +88,7 @@ export function useTerminalParkingPass(controller: TerminalParkingFoundation): v
     // serialized. The paired-parking capability that licenses the unmount says nothing about
     // whether the host retained this pty's buffer, so the park must not leave the client with
     // nothing to fall back on. Force-parks capture below with their eviction-exempt carve-out.
+    // Why localOnly: the ordinary park is the every-hide cadence; its bytes stay off the upload.
     for (const worktreeId of pass.nextParkedTerminalWorktreeIds) {
       if (capturedParked.has(worktreeId)) {
         continue
@@ -96,7 +97,8 @@ export function useTerminalParkingPass(controller: TerminalParkingFoundation): v
         captureParkedTerminalBuffers({
           worktreeId,
           tabIds: (tabsByWorktree[worktreeId] ?? []).map((tab) => tab.id),
-          repos
+          repos,
+          localOnly: true
         })
       ) {
         capturedParked.add(worktreeId)
@@ -127,11 +129,13 @@ export function useTerminalParkingPass(controller: TerminalParkingFoundation): v
             ...exemptRouteCounts
           })
         }
+        // Why shared: a force-park is rare, and its copy is what a second desktop cold-restores from.
         if (
           captureParkedTerminalBuffers({
             worktreeId,
             tabIds: evictableTabIds,
-            repos
+            repos,
+            localOnly: false
           })
         ) {
           capturedParked.add(worktreeId)

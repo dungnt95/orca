@@ -28,7 +28,8 @@ describe('captureNewlyParkedTerminalTabs', () => {
     captureNewlyParkedTerminalTabs(WORKTREE_ID, new Set(['tab-1']), ledger)
 
     expect(capture).toHaveBeenCalledTimes(1)
-    expect(capture).toHaveBeenCalledWith({ includeLocalBuffers: false })
+    // Why localOnly: the per-tab park is the every-hide cadence, so its bytes must stay off the upload.
+    expect(capture).toHaveBeenCalledWith({ includeLocalBuffers: false, localOnly: true })
     expect(ledger).toEqual(new Set(['tab-1']))
   })
 
