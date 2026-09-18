@@ -60,6 +60,8 @@ export function buildLocalPtySpawnEnvironment(args: {
       launchAgent: spawn.launchAgent,
       codexHomePathOverride: spawn.codexHomePathOverride,
       cwd: plan.cwd,
+      paneKey: spawn.paneKey,
+      worktreeId: spawn.worktreeId,
       shellPath: plan.shellPath,
       isWsl: plan.isWslShell,
       wslDistro: plan.launchWslDistro

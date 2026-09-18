@@ -128,6 +128,17 @@ const TUI_AGENT_CONFIG_SOURCE: Record<TuiAgent, TuiAgentConfigSource> = {
     // Why: opencode enables bracketed paste before its composer mounts; wait for the post-\x1b[?2004h show-cursor so paste lands.
     draftPasteReadySignal: 'render-cursor-after-bracketed-paste'
   },
+  // Why: the opencode2 beta installs as its own binary side-by-side with opencode
+  // (see docs/adr/0001-opencode2-separate-tui-agent.md). Mirrors opencode's
+  // prompt/flags; the v2 TUI renders on @opentui so paste readiness is verified
+  // at runtime and degrades to the fallback window if the signal never appears.
+  opencode2: {
+    detectCmd: 'opencode2',
+    launchCmd: 'opencode2',
+    expectedProcess: 'opencode2',
+    promptInjectionMode: 'flag-prompt',
+    draftPasteReadySignal: 'render-cursor-after-bracketed-paste'
+  },
   'mimo-code': {
     detectCmd: 'mimo',
     promptInjectionMode: 'flag-prompt',

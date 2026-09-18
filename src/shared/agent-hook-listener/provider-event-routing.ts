@@ -41,6 +41,7 @@ export function isNewTurnEvent(source: AgentHookSource, eventName: unknown): boo
     case 'amp':
       return eventName === 'agent.start'
     case 'opencode':
+    case 'opencode2':
       return eventName === 'SessionStart'
     case 'mimo-code':
       return false
@@ -137,6 +138,7 @@ export function extractToolFields(
     case 'amp':
       return extractAmpToolFields(eventName, hookPayload)
     case 'opencode':
+    case 'opencode2':
     case 'mimo-code':
       return extractOpenCodeToolFields(eventName, hookPayload)
     case 'cursor':

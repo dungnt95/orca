@@ -11,6 +11,8 @@ export type OpenCodeSqliteListRequest = {
   kind: 'list'
   dbPaths: readonly string[]
   limit: number
+  /** When 'opencode2', lists from the v2 channel-scoped DB schema (session_v2). */
+  agent?: 'opencode2'
 }
 
 export type OpenCodeSqliteParseRequest = {
@@ -19,6 +21,8 @@ export type OpenCodeSqliteParseRequest = {
   dbPath: string
   sessionId: string
   platform: NodeJS.Platform
+  /** When 'opencode2', parses from the v2 channel-scoped DB schema (session_v2). */
+  agent?: 'opencode2'
 }
 
 // Same arguments as `parse`, different answer: the session plus every message

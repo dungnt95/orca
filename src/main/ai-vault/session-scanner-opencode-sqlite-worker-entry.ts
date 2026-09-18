@@ -3,6 +3,8 @@ import type { AiVaultScanIssue } from '../../shared/ai-vault-types'
 import { captureOpenCodeSqliteSession } from './session-scanner-opencode-sqlite-capture'
 import { listOpenCodeSqliteSessions } from './session-scanner-opencode-sqlite-list'
 import { parseOpenCodeSqliteSession } from './session-scanner-opencode-sqlite'
+import { listOpenCode2SqliteSessions } from './session-scanner-opencode2-sqlite-list'
+import { parseOpenCode2SqliteSession } from './session-scanner-opencode2-sqlite'
 import type {
   OpenCodeSqliteWorkerRequest,
   OpenCodeSqliteWorkerResponse
@@ -24,11 +26,18 @@ async function handleRequest(
   try {
     if (request.kind === 'list') {
       const issues: AiVaultScanIssue[] = []
-      const candidates = await listOpenCodeSqliteSessions({
-        dbPaths: request.dbPaths,
-        limit: request.limit,
-        issues
-      })
+      const candidates =
+        request.agent === 'opencode2'
+          ? await listOpenCode2SqliteSessions({
+              dbPaths: request.dbPaths,
+              limit: request.limit,
+              issues
+            })
+          : await listOpenCodeSqliteSessions({
+              dbPaths: request.dbPaths,
+              limit: request.limit,
+              issues
+            })
       return { id: request.id, ok: true, value: { candidates, issues } }
     }
     if (request.kind === 'capture') {
@@ -39,11 +48,18 @@ async function handleRequest(
       })
       return { id: request.id, ok: true, value: capture }
     }
-    const session = await parseOpenCodeSqliteSession({
-      dbPath: request.dbPath,
-      sessionId: request.sessionId,
-      platform: request.platform
-    })
+    const session =
+      request.agent === 'opencode2'
+        ? await parseOpenCode2SqliteSession({
+            dbPath: request.dbPath,
+            sessionId: request.sessionId,
+            platform: request.platform
+          })
+        : await parseOpenCodeSqliteSession({
+            dbPath: request.dbPath,
+            sessionId: request.sessionId,
+            platform: request.platform
+          })
     return { id: request.id, ok: true, value: session }
   } catch (err) {
     return { id: request.id, ok: false, error: err instanceof Error ? err.message : String(err) }

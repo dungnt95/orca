@@ -20,6 +20,7 @@ import type { GetSelectedCodexHomePath } from '../host-env/types'
 import { isCurrentPtyExit, ptyOwnership } from './ownership-state'
 import { localProvider } from './registry'
 import { clearProviderPtyState } from './state-cleanup'
+import { openCode2HookService } from '../../../opencode2/hook-service'
 
 export function configureLocalPtyProvider(args: {
   runtime?: OrcaRuntimeService
@@ -76,6 +77,14 @@ export function configureLocalPtyProvider(args: {
         networkProxySettings: ptySettings,
         routeBrowserOpensToClient: runtime?.shouldRelayTerminalBrowserOpens?.()
       })
+      if (ctx?.launchAgent === 'opencode2' && ctx.cwd && ctx.paneKey) {
+        openCode2HookService.registerTerminal({
+          ptyId: id,
+          cwd: ctx.cwd,
+          paneKey: ctx.paneKey,
+          ...(ctx.worktreeId ? { worktreeId: ctx.worktreeId } : {})
+        })
+      }
       // Why: agents need their terminal handle at process start to self-identify in orchestration messages without an extra RPC.
       const requestedHandle = baseEnv.ORCA_TERMINAL_HANDLE
       const preAllocatedHandle =

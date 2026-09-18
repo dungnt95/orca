@@ -11,6 +11,8 @@ export type LocalPtyProviderOptions = {
       launchAgent?: PtySpawnOptions['launchAgent']
       codexHomePathOverride?: PtySpawnOptions['codexHomePathOverride']
       cwd?: string
+      paneKey?: string
+      worktreeId?: string
       shellPath?: string
       isWsl?: boolean
       wslDistro?: string | null

@@ -3,6 +3,7 @@ import { MAX_PANE_KEY_LEN } from '../../../shared/agent-hook-listener/listener-l
 import { parseLegacyNumericPaneKey, parsePaneKey } from '../../../shared/stable-pane-id'
 import { terminalStatusPayloadMatchesHook } from '../../../shared/agent-terminal-status-equivalence'
 import type { ParsedAgentStatusPayload } from '../../../shared/agent-status-types'
+import type { AgentProviderSessionMetadata } from '../../../shared/agent-session-resume'
 import type { EnrichedAgentHookEventPayload } from './server-types'
 import { AgentHookServerIngestNormalization } from './server-ingest-normalization'
 
@@ -13,6 +14,7 @@ export abstract class AgentHookServerIngestTerminal extends AgentHookServerInges
     tabId?: string
     worktreeId?: string
     connectionId?: string | null
+    providerSession?: AgentProviderSessionMetadata
     terminalHandle?: string
     payload: ParsedAgentStatusPayload
   }): void {
@@ -137,6 +139,7 @@ export abstract class AgentHookServerIngestTerminal extends AgentHookServerInges
         tabId,
         worktreeId,
         connectionId,
+        ...(event.providerSession ? { providerSession: event.providerSession } : {}),
         ...(preservedProviderSession ? { providerSession: preservedProviderSession } : {}),
         ...(terminalHandle ? { terminalHandle } : {}),
         payload: event.payload
